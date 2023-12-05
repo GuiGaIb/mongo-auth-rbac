@@ -1,0 +1,27 @@
+{
+  "name": "mongo-auth-rbac",
+  "version": "1.0.0",
+  "description": "Authentication and role-based access control implementation for Node.js + MongoDb",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GuiGaIb/mongo-auth-rbac.git"
+  },
+  "keywords": [
+    "mongodb",
+    "node",
+    "rbac",
+    "auth",
+    "mongoose",
+    "typescript"
+  ],
+  "author": "Guillermo García Ibarra",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GuiGaIb/mongo-auth-rbac/issues"
+  },
+  "homepage": "https://github.com/GuiGaIb/mongo-auth-rbac#readme"
+}
