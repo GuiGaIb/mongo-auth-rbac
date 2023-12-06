@@ -14,7 +14,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
     const schema: UserSchema<R> = new Schema(
         {
             id: {
-                type: String,
+                type: Number,
                 required: true,
                 unique: true,
                 immutable: true
@@ -219,7 +219,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
 };
 
 export interface IUser<R extends readonly string[]> {
-    id          : string;
+    id          : number;
     active      : boolean;
     email?      : string;
     roles       : UserRoles<R>;
