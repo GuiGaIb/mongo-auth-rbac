@@ -5,7 +5,7 @@ import { emailValidator } from '../utils/validators/email.js';
 import { argon2idHashValidator, rawPasswordValidator } from '../utils/validators/password.js';
 import { usernameValidator } from '../utils/validators/username.js';
 
-export const getUserSchema = <R extends readonly string[]>(roles: R, options: UserOptions = { }) => {
+export const getUserSchema = <R extends readonly string[]>(roles: R, options: UserSchemaOptions = { }) => {
     const schema: UserSchema<R> = new Schema(
         {
             id: {
@@ -157,7 +157,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
                     return this.where({ email })
                 }
             },
-            ...options.schemaOptions ?? {}
+            ...options.mongooseSchemaOptions ?? {}
         }
     )
     return schema;
@@ -278,8 +278,8 @@ export interface UserQueryHelpers<R extends readonly string[]> {
     inactive(): UserQWH<R, UserDoc<R>[]>;
 }
 
-export interface UserOptions {
-    schemaOptions?: Omit<SchemaOptions, 'methods' | 'query' | 'statics' | 'virtuals'>;
+export interface UserSchemaOptions {
+    mongooseSchemaOptions?: Omit<SchemaOptions, 'methods' | 'query' | 'statics' | 'virtuals'>;
     validators?: {
         email?: (v:string) => Promise<boolean> | boolean;
         password?: (v:string) => Promise<boolean> | boolean;
