@@ -2,15 +2,19 @@ import argon2 from 'argon2';
 import { Schema, Types, type HydratedDocument, type Model, type QueryWithHelpers, type SchemaOptions } from 'mongoose';
 import MyLogger, { type LoggerConfig } from 'my-logger';
 
-import { emailValidator } from '../utils/validators/email.js';
-import { argon2idHashValidator, rawPasswordValidator } from '../utils/validators/password.js';
-import { usernameValidator } from '../utils/validators/username.js';
+import { argon2idHashValidator, rawPasswordValidator } from '../utils/validators/user/password.js';
+import { UserValidators } from '../utils/validators/user.js';
 
-export const getUserSchema = <R extends readonly string[]>(roles: R, options: UserSchemaOptions = { }) => {
+export const getUserSchema =
+<R extends readonly string[]>(roles: R, options: UserSchemaOptions = { })
+    : { schema: UserSchema<R>, validators: UserValidators<R> } => {
+
     options.loggerConfig ??= { enable: false };
     const logger = new MyLogger(options.loggerConfig);
     logger.info(`Logger "${logger.name}" initialized. Creating schema...`, 'SCHEMA');
     logger.debug(JSON.stringify({ roles }), 'SCHEMA')
+
+    const validators = new UserValidators(roles, options.validators);
     const schema: UserSchema<R> = new Schema(
         {
             id: {
@@ -30,7 +34,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
                 unique: true,
                 sparse: true,
                 validate: {
-                    validator: options.validators?.email ?? emailValidator
+                    validator: validators.email
                 }
             },
             username: {
@@ -38,7 +42,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
                 required: true,
                 unique: true,
                 validate: {
-                    validator: options.validators?.username ?? usernameValidator
+                    validator: validators.username
                 }
             },
             // @ts-ignore - TS will raise an error: StringConstructor is not compatible with type readonly string
@@ -215,7 +219,7 @@ export const getUserSchema = <R extends readonly string[]>(roles: R, options: Us
         }
     );
     logger.ok('User schema created.', 'SCHEMA');
-    return schema;
+    return { schema, validators};
 };
 
 export interface IUser<R extends readonly string[]> {
