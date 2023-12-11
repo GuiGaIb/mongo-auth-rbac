@@ -11,8 +11,8 @@ export const getUserSchema =
 
     options.loggerConfig ??= { enable: false };
     const logger = new MyLogger(options.loggerConfig);
-    logger.info(`Logger "${logger.name}" initialized. Creating schema...`, 'SCHEMA');
-    logger.debug(JSON.stringify({ roles }), 'SCHEMA')
+    logger.info(`Logger "${logger.name}" initialized. Creating schema...`);
+    logger.debug(JSON.stringify({ roles }))
 
     const validators = new UserValidators(roles, options.validators);
     const schema: UserSchema<R> = new Schema(
@@ -86,9 +86,6 @@ export const getUserSchema =
             },
             _id: {
                 type: Schema.Types.ObjectId,
-                required: true,
-                unique: true,
-                immutable: true,
                 default: () => new Types.ObjectId()
             }
         },
@@ -218,7 +215,7 @@ export const getUserSchema =
             ...options.mongooseSchemaOptions ?? {}
         }
     );
-    logger.ok('User schema created.', 'SCHEMA');
+    logger.ok('User schema created.');
     return { schema, validators};
 };
 
@@ -323,7 +320,7 @@ export interface UserStatics<R extends readonly string[]> {
      * @param id The user's id.
      * @throws If the user is not found.
      */
-    getById(id: string): Promise<UserDoc<R>>;
+    getById(id: number): Promise<UserDoc<R>>;
 
     /**
      * Get a user by email.
