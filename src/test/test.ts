@@ -442,6 +442,28 @@ describe('Main test suite', () => {
                     assert.strictEqual(updatedUser.username, updateData.username);
                 });
             });
+
+            describe('deleteUser', () => {
+                afterEach('Clear users collection', clearUsersCollection);
+
+                it('throws an error if no user is found with the given id', () => {
+                    const id = 1;
+
+                    assert.rejects(() => {
+                        return Users.deleteUser(id);
+                    });
+                });
+
+                it('deletes the user with the given id and returns true', async () => {
+                    const user = await createUser();
+
+                    const deleteResult = await Users.deleteUser(user.id);
+                    await assert.rejects(() => {
+                        return Users.User.getById(user.id);
+                    });
+                    assert.strictEqual(deleteResult, true);
+                });
+            });
         });
     });
 });
