@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pretest": "npm run build",
+    "test": "mocha build/test/test.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -26,7 +28,10 @@
   },
   "homepage": "https://github.com/GuiGaIb/mongo-auth-rbac#readme",
   "devDependencies": {
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.3",
+    "dotenv": "^16.3.1",
+    "mocha": "^10.2.0",
     "my-logger": "github:GuiGaIb/my-logger",
     "typescript": "^5.3.2"
   },
