@@ -3,14 +3,13 @@ import { fileURLToPath, URL } from "url";
 import assert from "assert";
 import { Types } from 'mongoose';
 
-import { getUserController, type UserCreateObject } from "../controllers/user.js";
-import type { LoggerConfig } from "my-logger";
+import { getUserController, type UserCreateObject, type UserUpdateObject } from "../controllers/user.js";
 import type { UserDoc } from "../schemas/user.js";
 
-dotenv.config({ path: fileURLToPath(new URL("../../test.env", import.meta.url)) });
+const envError = dotenv.config({ path: fileURLToPath(new URL("../../test.env", import.meta.url)) }).error;
+if (envError) throw envError;
 
 describe('Main test suite', () => {
-    const loggerConfig: LoggerConfig = { enable: false, name: 'TEST', useHighIntensityColors: true, useTimestampInPrefix: false };
     const userRoles = ["role1", "role2", "role3"] as const;
     type R = typeof userRoles;
     const Users = getUserController({
@@ -23,10 +22,6 @@ describe('Main test suite', () => {
             password: process.env.MONGO_PASSWORD || ''
         },
         usersDbName: 'users_test',
-        loggerConfig,
-        schemaOptions: {
-            loggerConfig
-        }
     });
 
     async function clearUsersCollection() {
@@ -297,5 +292,156 @@ describe('Main test suite', () => {
                 assert.strictEqual(result, true);
             });
         })
+    });
+
+    describe('Users controller', () => {
+        describe('Instance methods', () => {
+            describe('createUser', () => {
+                afterEach('Clear users collection', clearUsersCollection);
+                it('throws an error if the given user data is invalid', async () => {
+                    const data = {...testUserData, password: 'invalidPassword'};
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.password = testUserData.password;
+
+                    data.active = 1 as unknown as boolean;
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.active = testUserData.active;
+
+                    data.createdBy = 1 as unknown as Types.ObjectId;
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.createdBy = testUserData.createdBy;
+
+                    data.email = 1 as unknown as string;
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.email = 'invalidEmail';
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.email = testUserData.email;
+
+                    data.id = '1' as unknown as number;
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.id = testUserData.id;
+
+                    // @ts-ignore - This is a test, so we're intentionally passing invalid data.
+                    data.roles = ['invalidRole'];
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.roles = testUserData.roles;
+
+                    data.username = 1 as unknown as string;
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.username = 'Invalid N@m3';
+                    await assert.rejects(() => {
+                        return Users.createUser(data);
+                    });
+                    data.username = testUserData.username;
+                });
+
+                it('creates a new user', async () => {
+                    const user = await createUser();
+                    const result = await Users.User.getById(user.id);
+
+                    assert.strictEqual(result.id, user.id);
+                });
+            });
+
+            describe('authWithEmailAndPassword', () => {
+                afterEach('Clear users collection', clearUsersCollection);
+                it('authenticates a user with the given email and password', async () => {
+                    const user = await createUser();
+                    const result = await Users.authWithEmailAndPassword(user.email as string, testUserData.password);
+
+                    assert.strictEqual(result.id, user.id);
+                });
+
+                it('throws an error if no user with the given email is found', async () => {
+                    await assert.rejects(() => {
+                        return Users.authWithEmailAndPassword('invalidEmail', testUserData.password);
+                    });
+                });
+
+                it('throws an error if the given password is invalid', async () => {
+                    const user = await createUser();
+                    await assert.rejects(() => {
+                        return Users.authWithEmailAndPassword(user.email as string, 'invalidPassword');
+                    });
+                });
+            });
+
+            describe('authWithUsernameAndPassword', () => {
+                afterEach('Clear users collection', clearUsersCollection);
+                it('authenticates a user with the given username and password', async () => {
+                    const user = await createUser();
+                    const result = await Users.authWithUsernameAndPassword(user.username, testUserData.password);
+
+                    assert.strictEqual(result.id, user.id);
+                });
+
+                it('throws an error if no user with the given username is found', async () => {
+                    await assert.rejects(() => {
+                        return Users.authWithUsernameAndPassword('invalidUsername', testUserData.password);
+                    });
+                });
+
+                it('throws an error if the given password is invalid', async () => {
+                    const user = await createUser();
+                    await assert.rejects(() => {
+                        return Users.authWithUsernameAndPassword(user.username, 'invalidPassword');
+                    });
+                });
+            });
+
+            describe('updateUser', () => {
+                afterEach('Clear users collection', clearUsersCollection);
+                it('throws an error no user is found with the given id', () => {
+                    const id = 1;
+                    const data: UserUpdateObject<R> = { username: 'testUsername', updatedBy: new Types.ObjectId };
+
+                    assert.rejects(() => {
+                        return Users.updateUser(id, data);
+                    });
+                });
+
+                it('returns the updated user if the given data is valid', async () => {
+                    const user = await createUser();
+
+                    const updateData: UserUpdateObject<R> = {
+                        updatedBy: user._id,
+                        active: false,
+                        email: 'alt.email@test.com',
+                        password: 'aA1!12345',
+                        roles: {
+                            add: ['role2'],
+                            remove: ['role1']
+                        },
+                        username: 'Alt Username'
+                    };
+
+                    const updatedUser = await Users.updateUser(user.id, updateData);
+
+                    assert.strictEqual(user._id.toString(), updatedUser._id.toString());
+                    assert.strictEqual(user.id, updatedUser.id);
+                    assert.strictEqual(updatedUser.active, updateData.active);
+                    assert.strictEqual(updatedUser.email, updateData.email);
+                    assert.ok(await updatedUser.comparePassword(updateData.password as string));
+                    assert.deepStrictEqual(updatedUser.roles, ['role2']);
+                    assert.strictEqual(updatedUser.username, updateData.username);
+                });
+            });
+        });
     });
 });
